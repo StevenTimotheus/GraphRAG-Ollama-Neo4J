@@ -20,7 +20,57 @@ import requests
 from ollama import chat
 import pyarrow.parquet as pq
 import pandas as pd
+from neo4j import GraphDatabase
 
+# Establish a Neo4j database connection
+def create_neo4j_connection(uri, user, password):
+    driver = GraphDatabase.driver(uri, auth=(user, password))
+    return driver
+
+# Run a query against Neo4j and return the results
+def run_neo4j_query(driver, query):
+    with driver.session() as session:
+        result = session.run(query)
+        return result.graph()
+
+# Function to visualize a graph from Neo4j using Plotly
+def visualize_neo4j_graph(graph):
+    nodes = list(graph.nodes)
+    edges = list(graph.relationships)
+    
+    # Processing nodes and edges similarly to the existing function
+    # Assuming similar attributes and methods are available
+    # Generate visualization code here...
+    # Return the Plotly figure
+
+# Gradio Interface modifications
+neo4j_uri = gr.Textbox(label="Neo4j URI", placeholder="bolt://localhost:7687")
+neo4j_user = gr.Textbox(label="Username")
+neo4j_password = gr.Password(label="Password")
+neo4j_connect_btn = gr.Button("Connect to Neo4j")
+neo4j_query_input = gr.Textbox(label="Enter your Neo4j Cypher Query")
+neo4j_query_btn = gr.Button("Run Query")
+
+# Handling Neo4j connection and queries
+def handle_neo4j_connection(uri, user, password):
+    try:
+        driver = create_neo4j_connection(uri, user, password)
+        return "Connected successfully", driver
+    except Exception as e:
+        return f"Connection failed: {str(e)}", None
+
+
+neo4j_connect_btn.click(
+    fn=handle_neo4j_connection,
+    inputs=[neo4j_uri, neo4j_user, neo4j_password],
+    outputs=["status_message", "neo4j_driver"]
+)
+
+neo4j_query_btn.click(
+    fn=lambda driver, query: visualize_neo4j_graph(run_neo4j_query(driver, query)),
+    inputs=["neo4j_driver", neo4j_query_input],
+    outputs=vis_output
+)
 
 # Set up logging
 log_queue = queue.Queue()
